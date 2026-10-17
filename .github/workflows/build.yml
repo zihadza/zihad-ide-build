@@ -1,35 +1,36 @@
 name: Build APK
+
 on:
-  push:
-    branches: [ main, master ]
   workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
+
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+
       - name: Build Debug APK
         run: |
-          if [ -f gradlew ]; then chmod +x gradlew && ./gradlew assembleDebug --no-daemon;
-          elif [ -f app/build.gradle ] || [ -f app/build.gradle.kts ]; then
-            echo "Project found but no gradlew. Add wrapper or full project files.";
-            exit 1;
-          else
-            echo "No Android project files in repo yet.";
-            exit 1;
+          set -e
+          if [ ! -f gradlew ]; then
+            echo "ERROR: gradlew missing. Upload full Android project."
+            ls -la
+            exit 1
           fi
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace
+
       - name: Upload APK
-        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
-          path: |
-            app/build/outputs/apk/debug/*.apk
-            **/build/outputs/apk/debug/*.apk
+          path: app/build/outputs/apk/debug/*.apk
